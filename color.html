@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacts App</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 30px 40px;
+            background-color: #f4f4f4;
+        }
+
+        .page-container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 30px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.08);
+        }
+
+        h1, h2 {
+            margin-top: 0;
+        }
+
+        hr {
+            margin: 30px 0;
+        }
+
+        button {
+            padding: 10px 18px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        input, select {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .form-section {
+            margin-top: 25px;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .form-row label {
+            width: 100px;
+            font-weight: bold;
+        }
+
+        .contact-input {
+            width: 300px;
+        }
+
+        .status-select {
+            width: 120px;
+        }
+
+        .category-select {
+            width: 300px;
+        }
+
+        .result-box {
+            margin-top: 15px;
+        }
+
+        .contact-result {
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .contact-result:hover {
+            background-color: #f2f2f2;
+        }
+
+        .category-section {
+    text-align: center;
+}
+
+.category-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.category-buttons button {
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    padding: 12px 22px;
+}
+
+#categoryInfo {
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+}
+
+        .add-button {
+            background-color: #78d5b0;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .update-button {
+            background-color: #7fd3e6;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .delete-button {
+            background-color: #ff6b6b;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #editSection {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page-container">
+
+    <h1>Contacts App</h1>
+
+    <p id="userName">Logged in as User</p>
+
+    <button onclick="doLogout()">Log Out</button>
+
+    <hr>
+
+    <!-- CATEGORY FILTER -->
+
+    <div class="category-section">
+    <h2>Contact Categories</h2>
+    <p>Select a category to view contacts from that group.</p>
+
+    <div class="category-buttons">
+        <button style="background:#f6e05e"
+                onclick="selectCategory('All Contacts','#f6e05e')">
+            All Contacts
+        </button>
+
+        <button style="background:#ff6b6b"
+                onclick="selectCategory('Family','#ff6b6b')">
+            Family
+        </button>
+
+        <button style="background:#f7b267"
+                onclick="selectCategory('Friends','#f7b267')">
+            Friends
+        </button>
+
+        <button style="background:#b7d85f"
+                onclick="selectCategory('Work','#b7d85f')">
+            Work
+        </button>
+
+        <button style="background:#78d5b0"
+                onclick="selectCategory('School','#78d5b0')">
+            School
+        </button>
+
+        <button style="background:#7fd3e6"
+                onclick="selectCategory('Services','#7fd3e6')">
+            Services
+        </button>
+
+        <button style="background:#7fa8ff"
+                onclick="selectCategory('Emergency','#7fa8ff')">
+            Emergency
+        </button>
+
+        <button style="background:#b28cff"
+                onclick="selectCategory('Other','#b28cff')">
+            Other
+        </button>
+    </div>
+
+    <div id="categoryInfo">
+        <strong>Selected Category:</strong> All Contacts
+    </div>
+</div>
+
+    <hr>
+
+    <!-- SEARCH CONTACT -->
+
+    <div class="form-section">
+
+        <h2>Search Contact</h2>
+
+        <input
+            type="text"
+            id="searchText"
+            class="contact-input"
+            placeholder="Enter contact name"
+        >
+
+        <button onclick="searchContact()">
+            Search
+        </button>
+
+        <p id="searchMessage"></p>
+
+        <div id="searchResults" class="result-box"></div>
+
+    </div>
+
+    <hr>
+
+    <!-- ADD CONTACT -->
+
+    <div class="form-section">
+
+        <h2>Add Contact</h2>
+
+        <div class="form-row">
+            <label>Name:</label>
+
+            <input
+                type="text"
+                id="contactName"
+                class="contact-input"
+                placeholder="Enter name"
+            >
+        </div>
+
+        <div class="form-row">
+            <label>Phone:</label>
+
+            <input
+                type="text"
+                id="contactPhone"
+                class="contact-input"
+                placeholder="Enter phone number"
+            >
+
+            <select
+                id="phoneStatus"
+                class="status-select"
+                onchange="toggleContactField('contactPhone', this.value)"
+            >
+                <option value="available">Available</option>
+                <option value="na">N/A</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label>Email:</label>
+
+            <input
+                type="email"
+                id="contactEmail"
+                class="contact-input"
+                placeholder="Enter email"
+            >
+
+            <select
+                id="emailStatus"
+                class="status-select"
+                onchange="toggleContactField('contactEmail', this.value)"
+            >
+                <option value="available">Available</option>
+                <option value="na">N/A</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label>Category:</label>
+
+            <select
+                id="contactCategory"
+                class="category-select"
+            >
+                <option value="Family">Family</option>
+                <option value="Friends">Friends</option>
+                <option value="Work">Work</option>
+                <option value="School">School</option>
+                <option value="Services">Services</option>
+                <option value="Emergency">Emergency</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <button
+            class="add-button"
+            onclick="addContact()"
+        >
+            Add Contact
+        </button>
+
+        <p id="addResult"></p>
+
+    </div>
+
+    <hr>
+
+    <!-- EDIT CONTACT -->
+
+    <div id="editSection" class="form-section">
+
+        <h2>Edit Contact</h2>
+
+        <input
+            type="hidden"
+            id="editContactId"
+        >
+
+        <div class="form-row">
+            <label>Name:</label>
+
+            <input
+                type="text"
+                id="editName"
+                class="contact-input"
+                placeholder="Enter name"
+            >
+        </div>
+
+        <div class="form-row">
+            <label>Phone:</label>
+
+            <input
+                type="text"
+                id="editPhone"
+                class="contact-input"
+                placeholder="Enter phone number"
+            >
+
+            <select
+                id="editPhoneStatus"
+                class="status-select"
+                onchange="toggleContactField('editPhone', this.value)"
+            >
+                <option value="available">Available</option>
+                <option value="na">N/A</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label>Email:</label>
+
+            <input
+                type="email"
+                id="editEmail"
+                class="contact-input"
+                placeholder="Enter email"
+            >
+
+            <select
+                id="editEmailStatus"
+                class="status-select"
+                onchange="toggleContactField('editEmail', this.value)"
+            >
+                <option value="available">Available</option>
+                <option value="na">N/A</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label>Category:</label>
+
+            <select
+                id="editCategory"
+                class="category-select"
+            >
+                <option value="Family">Family</option>
+                <option value="Friends">Friends</option>
+                <option value="Work">Work</option>
+                <option value="School">School</option>
+                <option value="Services">Services</option>
+                <option value="Emergency">Emergency</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <button
+            class="update-button"
+            onclick="updateContact()"
+        >
+            Update Contact
+        </button>
+
+        <button
+            class="delete-button"
+            onclick="deleteContact()"
+        >
+            Delete Contact
+        </button>
+
+        <p id="editResult"></p>
+
+    </div>
+
+</div>
+
+<script src="js/code.js?v=10"></script>
+
+</body>
+</html>

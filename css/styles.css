@@ -1,0 +1,73 @@
+body
+{
+    font-family: Arial, sans-serif;
+    margin: 40px;
+}
+
+header
+{
+    margin-bottom: 20px;
+}
+
+input
+{
+    padding: 8px;
+    width: 250px;
+}
+
+button
+{
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.periodic-section
+{
+    text-align: center;
+    margin: 30px auto;
+}
+
+#periodicTableImage
+{
+    width: 90%;
+    max-width: 900px;
+    height: auto;
+}
+
+.table-note
+{
+    color: #666;
+}
+
+.color-section
+{
+    margin: 35px auto;
+    max-width: 900px;
+}
+
+#searchResults
+{
+    margin-top: 15px;
+}
+
+.color-result
+{
+    display: inline-block;
+
+    padding: 8px 14px;
+    margin: 5px;
+
+    border: 1px solid #777;
+    border-radius: 18px;
+}
+
+#loginResult,
+#addResult
+{
+    color: red;
+}
+
+#searchMessage
+{
+    margin-top: 15px;
+}

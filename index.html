@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacts App</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f4f4f4;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.12);
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 10px;
+        }
+
+        .subtitle {
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 16px;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .login-button {
+            background-color: #7fd3e6;
+        }
+
+        .register-button {
+            background-color: #78d5b0;
+        }
+
+        .cancel-button {
+            background-color: #ddd;
+        }
+
+        #loginResult,
+        #registerResult {
+            min-height: 20px;
+            margin-top: 12px;
+            color: red;
+        }
+
+        #registerSection {
+            display: none;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+        }
+
+        .color-bar {
+            display: flex;
+            height: 8px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .color-bar div {
+            flex: 1;
+        }
+
+        .red { background:#ff6b6b; }
+        .orange { background:#f7b267; }
+        .yellow { background:#f6e05e; }
+        .green { background:#78d5b0; }
+        .blue { background:#7fd3e6; }
+        .purple { background:#b28cff; }
+    </style>
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="color-bar">
+        <div class="red"></div>
+        <div class="orange"></div>
+        <div class="yellow"></div>
+        <div class="green"></div>
+        <div class="blue"></div>
+        <div class="purple"></div>
+    </div>
+
+    <h1>Contacts App</h1>
+    <p class="subtitle">Log in to access your contacts</p>
+
+    <!-- LOGIN -->
+    <input type="text" id="loginName" placeholder="Username">
+    <input type="password" id="loginPassword" placeholder="Password">
+
+    <button class="login-button" onclick="doLogin()">
+        Login
+    </button>
+
+    <button class="register-button" onclick="toggleRegister()">
+        Create Account
+    </button>
+    
+    <p id="loginResult"></p>
+    
+    <!-- REGISTRATION -->
+    <div id="registerSection">
+
+        <h2>Register</h2>
+
+        <input type="text"
+               id="registerFirstName"
+               placeholder="First Name">
+
+        <input type="text"
+               id="registerLastName"
+               placeholder="Last Name">
+
+        <input type="text"
+               id="registerUsername"
+               placeholder="Username">
+
+        <input type="password"
+               id="registerPassword"
+               placeholder="Password">
+
+        <input type="password"
+               id="registerConfirmPassword"
+               placeholder="Confirm Password">
+
+        <button class="register-button" onclick="doRegister()">
+            Register
+        </button>
+
+        <button class="cancel-button" onclick="toggleRegister()">
+            Cancel
+        </button>
+
+        <p id="registerResult"></p>
+
+    </div>
+
+</div>
+
+<script src="js/code.js?v=5"></script>
+
+</body>
+</html>
