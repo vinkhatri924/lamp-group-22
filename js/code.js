@@ -134,57 +134,6 @@ function doRegister()
     });
 
     // Login post registration
-    fetch("/api/index.php",
-    {
-        method: "POST",
-        headers:
-        {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(
-        {
-            login: username,
-            password: password
-        })
-    })
-
-    .then(response =>
-    {
-        return response.json().then(data =>
-        {
-            return {
-                ok: response.ok,
-                data: data
-            };
-        });
-    })
-
-    .then(resultData =>
-    {
-        let data = resultData.data;
-
-        if (resultData.ok && data.id > 0)
-        {
-            sessionStorage.setItem("userId", data.id);
-            sessionStorage.setItem("firstName", data.firstName);
-            sessionStorage.setItem("lastName", data.lastName);
-            sessionStorage.setItem("token", data.token);
-
-            window.location.href = "color.html";
-        }
-        else
-        {
-            result.innerHTML =
-                data.error || "Invalid username or password.";
-        }
-    })
-
-    .catch(error =>
-    {
-        console.error(error);
-        result.innerHTML = "Unable to connect to the server.";
-    });
-
 
 }
 
