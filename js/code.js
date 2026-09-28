@@ -69,74 +69,33 @@ function doLogin()
 }
 
 // --------------------------------------------------
-// SHOW / HIDE REGISTER FORM
-// --------------------------------------------------
-
-function toggleRegister()
-{
-    let section = document.getElementById("registerSection");
-
-    if (section.style.display === "block")
-    {
-        section.style.display = "none";
-    }
-    else
-    {
-        section.style.display = "block";
-    }
-}
-
-
-// --------------------------------------------------
 // REGISTER
 // --------------------------------------------------
 
 function doRegister()
 {
-    let firstName =
-        document.getElementById("registerFirstName").value.trim();
+    let firstName = document.getElementById("firstName").value.trim();
+    let lastName = document.getElementById("lastName").value.trim();
+    let username = document.getElementById("username").value.trim();
+    let password = document.getElementById("password").value;
+    let result = document.getElementById("registerResult");
 
-    let lastName =
-        document.getElementById("registerLastName").value.trim();
-
-    let username =
-        document.getElementById("registerUsername").value.trim();
-
-    let password =
-        document.getElementById("registerPassword").value.trim();
-
-    let confirmPassword =
-        document.getElementById("registerConfirmPassword").value.trim();
-
-    let result =
-        document.getElementById("registerResult");
 
     result.innerHTML = "";
 
-    if (firstName === "" ||
-        lastName === "" ||
-        username === "" ||
-        password === "")
+    if (firstName === "" || lastName === "" || username === "" || password === "")
     {
-        result.innerHTML = "Please complete all fields.";
-        return;
-    }
-
-    if (password !== confirmPassword)
-    {
-        result.innerHTML = "Passwords do not match.";
+        result.innerHTML = "Please fill all required fields";
         return;
     }
 
     fetch("/api/index.php?action=register",
     {
         method: "POST",
-
         headers:
         {
             "Content-Type": "application/json"
         },
-
         body: JSON.stringify(
         {
             firstName: firstName,
@@ -161,38 +120,72 @@ function doRegister()
     {
         let data = resultData.data;
 
-        if (resultData.ok)
+        if (resultData.ok && data.id > 0)
         {
-            result.style.color = "green";
-            result.innerHTML =
-                data.message || "Registration successful!";
+            result.innerHTML = "Registration Success! Logging you in...";
+        }
+    
+    })
 
-            // Put the new username into the login box.
-            document.getElementById("loginName").value = username;
+    .catch(error =>
+    {
+        console.error(error);
+        result.innerHTML = "Registration Error!";
+    });
 
-            // Clear registration fields.
-            document.getElementById("registerFirstName").value = "";
-            document.getElementById("registerLastName").value = "";
-            document.getElementById("registerUsername").value = "";
-            document.getElementById("registerPassword").value = "";
-            document.getElementById("registerConfirmPassword").value = "";
+    // Login post registration
+    fetch("/api/index.php",
+    {
+        method: "POST",
+        headers:
+        {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(
+        {
+            login: username,
+            password: password
+        })
+    })
+
+    .then(response =>
+    {
+        return response.json().then(data =>
+        {
+            return {
+                ok: response.ok,
+                data: data
+            };
+        });
+    })
+
+    .then(resultData =>
+    {
+        let data = resultData.data;
+
+        if (resultData.ok && data.id > 0)
+        {
+            sessionStorage.setItem("userId", data.id);
+            sessionStorage.setItem("firstName", data.firstName);
+            sessionStorage.setItem("lastName", data.lastName);
+            sessionStorage.setItem("token", data.token);
+
+            window.location.href = "color.html";
         }
         else
         {
-            result.style.color = "red";
             result.innerHTML =
-                data.error || "Registration failed.";
+                data.error || "Invalid username or password.";
         }
     })
 
     .catch(error =>
     {
         console.error(error);
-
-        result.style.color = "red";
-        result.innerHTML =
-            "Unable to connect to the server.";
+        result.innerHTML = "Unable to connect to the server.";
     });
+
+
 }
 
 // --------------------------------------------------
