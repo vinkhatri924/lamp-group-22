@@ -110,7 +110,7 @@
     <p class="subtitle">
         Please enter your information to Register
     </p>
-    <form onsubmit="doRegister(); return false;">
+    <form onsubmit="event.preventDefault(); doRegister();">
     
         <input
             type="text"
