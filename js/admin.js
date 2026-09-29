@@ -255,12 +255,14 @@ function selectAdminUser(user)
 
     // Change button depending on account status.
     let disableButton =
-        document.getElementById("disableUserButton");
+    document.getElementById("disableUserButton");
 
+    if (disableButton){
     disableButton.textContent =
         user.isDisabled
         ? "Enable User"
         : "Disable User";
+    }
 
 
     document.getElementById("selectedUserMessage").textContent =
