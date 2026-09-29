@@ -424,23 +424,5 @@ if ($method === 'POST' && ($_GET['action'] ?? '') === 'adminCreateAccount') {
     respond(201, ['id' => (int) $db->lastInsertId(), 'error' => '']);
 }
 
-// Route Admin requests to admin.php
-$action = $_GET['action'] ?? '';
-
-$adminActions = [
-    'adminSearchUsers',
-    'adminUserContacts',
-    'adminSearchContacts',
-    'adminSetDisabled',
-    'adminChangePassword',
-    'adminCreate'
-];
-
-if (in_array($action, $adminActions, true))
-{
-    require __DIR__ . '/admin.php';
-    exit;
-}
-
 // ERROR: if here, no other endpoints matched, return 404
 respond(404, ['error' => 'Endpoint not found']);

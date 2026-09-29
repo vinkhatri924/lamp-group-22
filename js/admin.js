@@ -72,7 +72,7 @@ async function adminSearchUsers()
     {
         // Blank search is allowed and will return all users.
         let url =
-            "/api/index.php?action=adminSearchUsers&q=" +
+            "/api/index.php?action=adminUsers&q=" +
             encodeURIComponent(searchText);
 
         let response = await fetch(url,
@@ -247,17 +247,11 @@ function adminSearchContacts()
 }
 
 
-function adminCreateAccount()
-{
-    document.getElementById("createAdminResult").textContent =
-        "Create Admin will be connected next.";
-}// ------------------------------------------------------------
+// ------------------------------------------------------------
 // CREATE ADMIN ACCOUNT
 // ------------------------------------------------------------
-
 async function adminCreateAccount()
 {
-    // Get the values entered in the Admin form.
     let firstName =
         document.getElementById("newAdminFirstName").value.trim();
 
@@ -273,10 +267,8 @@ async function adminCreateAccount()
     let result =
         document.getElementById("createAdminResult");
 
-    // Clear any old message.
     result.textContent = "";
 
-    // Make sure every field was completed.
     if (firstName === "" ||
         lastName === "" ||
         username === "" ||
@@ -286,13 +278,12 @@ async function adminCreateAccount()
         return;
     }
 
-    // Get the logged-in Admin's token.
     let token = sessionStorage.getItem("token");
 
     try
     {
         let response = await fetch(
-            "/api/index.php?action=adminCreate",
+            "/api/index.php?action=adminCreateAccount",
             {
                 method: "POST",
 
@@ -307,26 +298,24 @@ async function adminCreateAccount()
                     firstName: firstName,
                     lastName: lastName,
                     username: username,
-                    password: password
+                    password: password,
+                    role: "Admin"
                 })
             }
         );
 
         let data = await response.json();
 
-        // Show an error returned by the API.
         if (!response.ok)
         {
             result.textContent =
                 data.error || "Unable to create Admin account.";
-
             return;
         }
 
-        // Account creation succeeded.
-        result.textContent = "Admin account created successfully!";
+        result.textContent =
+            "Admin account created successfully!";
 
-        // Clear the form.
         document.getElementById("newAdminFirstName").value = "";
         document.getElementById("newAdminLastName").value = "";
         document.getElementById("newAdminUsername").value = "";
