@@ -251,4 +251,92 @@ function adminCreateAccount()
 {
     document.getElementById("createAdminResult").textContent =
         "Create Admin will be connected next.";
+}// ------------------------------------------------------------
+// CREATE ADMIN ACCOUNT
+// ------------------------------------------------------------
+
+async function adminCreateAccount()
+{
+    // Get the values entered in the Admin form.
+    let firstName =
+        document.getElementById("newAdminFirstName").value.trim();
+
+    let lastName =
+        document.getElementById("newAdminLastName").value.trim();
+
+    let username =
+        document.getElementById("newAdminUsername").value.trim();
+
+    let password =
+        document.getElementById("newAdminPassword").value;
+
+    let result =
+        document.getElementById("createAdminResult");
+
+    // Clear any old message.
+    result.textContent = "";
+
+    // Make sure every field was completed.
+    if (firstName === "" ||
+        lastName === "" ||
+        username === "" ||
+        password === "")
+    {
+        result.textContent = "Please complete all fields.";
+        return;
+    }
+
+    // Get the logged-in Admin's token.
+    let token = sessionStorage.getItem("token");
+
+    try
+    {
+        let response = await fetch(
+            "/api/index.php?action=adminCreate",
+            {
+                method: "POST",
+
+                headers:
+                {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+
+                body: JSON.stringify(
+                {
+                    firstName: firstName,
+                    lastName: lastName,
+                    username: username,
+                    password: password
+                })
+            }
+        );
+
+        let data = await response.json();
+
+        // Show an error returned by the API.
+        if (!response.ok)
+        {
+            result.textContent =
+                data.error || "Unable to create Admin account.";
+
+            return;
+        }
+
+        // Account creation succeeded.
+        result.textContent = "Admin account created successfully!";
+
+        // Clear the form.
+        document.getElementById("newAdminFirstName").value = "";
+        document.getElementById("newAdminLastName").value = "";
+        document.getElementById("newAdminUsername").value = "";
+        document.getElementById("newAdminPassword").value = "";
+    }
+    catch (error)
+    {
+        console.error(error);
+
+        result.textContent =
+            "Unable to connect to the server.";
+    }
 }
