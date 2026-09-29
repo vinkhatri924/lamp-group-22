@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacts App - Admin</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 30px 40px;
+            background-color: #f4f4f4;
+        }
+
+        .page-container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 30px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.08);
+        }
+
+        h1, h2 { margin-top: 0; }
+        hr { margin: 30px 0; }
+
+        input, select {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 18px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .search-input { width: 300px; }
+        .section { margin-top: 25px; }
+        .result-box { margin-top: 15px; }
+
+        .user-result, .contact-result {
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .primary-button { background-color: #7fd3e6; }
+        .success-button { background-color: #78d5b0; }
+        .warning-button { background-color: #f6e05e; }
+        .danger-button { background-color: #ff6b6b; }
+
+        .admin-form {
+            max-width: 450px;
+        }
+
+        .admin-form input {
+            width: 100%;
+        }
+
+        #selectedUserSection {
+            display: none;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page-container">
+
+    <h1>Admin Dashboard</h1>
+
+    <p id="adminUserName">Logged in as Administrator</p>
+
+    <button onclick="adminLogout()">Log Out</button>
+
+    <hr>
+
+    <!-- SEARCH USERS -->
+
+    <div class="section">
+        <h2>Search Users</h2>
+
+        <input
+            type="text"
+            id="userSearchText"
+            class="search-input"
+            placeholder="Enter name or username"
+        >
+
+        <button
+            class="primary-button"
+            onclick="adminSearchUsers()">
+            Search
+        </button>
+
+        <p id="userSearchMessage"></p>
+
+        <div id="userSearchResults" class="result-box"></div>
+    </div>
+
+    <!-- SELECTED USER -->
+
+    <div id="selectedUserSection">
+
+        <h2>Selected User</h2>
+
+        <input type="hidden" id="selectedUserId">
+
+        <p>
+            <strong>Name:</strong>
+            <span id="selectedUserName"></span>
+        </p>
+
+        <p>
+            <strong>Username:</strong>
+            <span id="selectedUsername"></span>
+        </p>
+
+        <p>
+            <strong>Role:</strong>
+            <span id="selectedUserRole"></span>
+        </p>
+
+        <p>
+            <strong>Status:</strong>
+            <span id="selectedUserStatus"></span>
+        </p>
+
+        <button
+            class="primary-button"
+            onclick="adminViewUserContacts()">
+            View Contacts
+        </button>
+
+        <button
+            class="warning-button"
+            onclick="adminChangePassword()">
+            Change Password
+        </button>
+
+        <button
+            class="danger-button"
+            onclick="adminDisableUser()">
+            Disable User
+        </button>
+
+        <p id="selectedUserMessage"></p>
+
+    </div>
+
+    <hr>
+
+    <!-- SEARCH ALL CONTACTS -->
+
+    <div class="section">
+        <h2>Search All Contacts</h2>
+
+        <input
+            type="text"
+            id="adminContactSearchText"
+            class="search-input"
+            placeholder="Enter contact name"
+        >
+
+        <button
+            class="primary-button"
+            onclick="adminSearchContacts()">
+            Search
+        </button>
+
+        <p id="contactSearchMessage"></p>
+
+        <div id="adminContactResults" class="result-box"></div>
+    </div>
+
+    <hr>
+
+    <!-- CREATE ADMIN -->
+
+    <div class="section">
+        <h2>Create Admin Account</h2>
+
+        <div class="admin-form">
+
+            <input
+                type="text"
+                id="newAdminFirstName"
+                placeholder="First Name"
+            >
+
+            <input
+                type="text"
+                id="newAdminLastName"
+                placeholder="Last Name"
+            >
+
+            <input
+                type="text"
+                id="newAdminUsername"
+                placeholder="Username"
+            >
+
+            <input
+                type="password"
+                id="newAdminPassword"
+                placeholder="Password"
+            >
+
+            <button
+                class="success-button"
+                onclick="adminCreateAccount()">
+                Create Admin
+            </button>
+
+            <p id="createAdminResult"></p>
+
+        </div>
+    </div>
+
+</div>
+
+<script src="js/admin.js?v=1"></script>
+
+</body>
+</html>

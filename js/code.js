@@ -160,8 +160,13 @@ function doRegister()
                     sessionStorage.setItem("firstName", data.firstName);
                     sessionStorage.setItem("lastName", data.lastName);
                     sessionStorage.setItem("token", data.token);
+                    sessionStorage.setItem("role", data.role);
 
-                    window.location.href = "color.html";
+                    if (data.role === "Admin") {
+                        window.location.href = "admin.html";
+                    } else {
+                        window.location.href = "color.html";
+                    }
                 }
                 else
                 {

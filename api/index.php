@@ -59,7 +59,13 @@ if ($method === 'POST' && !isset($_GET['action'])) {
             respond(400, ['error' => 'Login and password are required']);
         }
  
-        $stmt = $db->prepare('SELECT ID, FirstName, LastName, Password FROM Users WHERE Username = :login LIMIT 1');
+       $stmt = $db->prepare(
+            'SELECT ID, FirstName, LastName, Password, Role, IsDisabled
+            FROM Users
+            WHERE Username = :login
+            LIMIT 1'
+        );
+        
         $stmt->execute([':login' => $login]);
         $user = $stmt->fetch();
  
