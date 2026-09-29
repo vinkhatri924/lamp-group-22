@@ -18,8 +18,8 @@ function getDB() {
         loadEnv();
 
         $host    = getenv('DB_HOST')     ?: 'localhost';
-        $dbname  = getenv('DB_NAME')     ?: 'ContactsAppDB';
-        $user    = getenv('DB_USER')     ?: 'ContactsAppUser';
+        $dbname  = getenv('DB_NAME')     ?: 'ColorsAppDB';
+        $user    = getenv('DB_USER')     ?: 'ColorsAppUser';
         $pass    = getenv('DB_PASSWORD') !== false 
                      ? getenv('DB_PASSWORD') 
                      : (getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');

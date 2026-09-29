@@ -257,6 +257,9 @@ function selectCategory(category, color)
 
         info.style.backgroundColor = color;
     }
+
+    document.getElementById("searchText").value = "";
+    searchContact();
 }
 
 // --------------------------------------------------
@@ -283,12 +286,41 @@ function toggleContactField(fieldId, status)
     }
 }
 
+// --------------------------------------------------
+// CONTACT REQUEST
+// --------------------------------------------------
+
+async function contactRequest(action, body = null, params = {})
+{
+    const query = new URLSearchParams({ action, ...params });
+
+    const options = {
+        method: body === null ? "GET" : "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + sessionStorage.getItem("token")
+        }
+    };
+
+    if (body !== null) {
+        options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch("/api/index.php?" + query, options);
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+        throw new Error(data.error || "Request failed.");
+    }
+
+    return data;
+}
 
 // --------------------------------------------------
 // SEARCH CONTACT
 // --------------------------------------------------
 
-function searchContact()
+async function searchContact()
 {
     let searchText =
         document.getElementById("searchText").value.trim();
@@ -302,21 +334,23 @@ function searchContact()
     message.innerHTML = "";
     results.innerHTML = "";
 
-    /*
-        API CONNECTION GOES HERE.
+    //API Connection
+    const params = {};
 
-        The API teammate needs to provide:
-        - Search endpoint
-        - HTTP method
-        - Query parameter names
-        - JSON response format
+    if (searchText !== "") {
+        params.q = searchText;
+    }
 
-        Example future result:
+    if (selectedCategory !== "All Contacts") {
+        params.category = selectedCategory;
+    }
+
+    try {
+        const data = await contactRequest("contacts", null, params);
         displayContactResults(data.contacts);
-    */
-
-    message.innerHTML =
-        "Contact search is ready to connect to the API.";
+    } catch (error) {
+        message.textContent = error.message;
+    }
 }
 
 
@@ -345,6 +379,17 @@ function displayContactResults(contacts)
         let item = document.createElement("div");
 
         item.className = "contact-result";
+        const categoryColors = {
+            Family: "#ff6b6b",
+            Friends: "#f7b267",
+            Work: "#b7d85f",
+            School: "#78d5b0",
+            Services: "#7fd3e6",
+            Emergency: "#7fa8ff",
+            Other: "#b28cff"
+        };
+
+        item.style.backgroundColor = categoryColors[contact.category] || "#ffffff";
 
         item.innerHTML =
             "<strong>" + contact.name + "</strong><br>" +
@@ -366,7 +411,7 @@ function displayContactResults(contacts)
 // ADD CONTACT
 // --------------------------------------------------
 
-function addContact()
+async function addContact()
 {
     let name =
         document.getElementById("contactName").value.trim();
@@ -399,19 +444,22 @@ function addContact()
         return;
     }
 
-    /*
-        API CONNECTION GOES HERE.
+    //API Connection
+    result.textContent = "";
 
-        Send:
-        name
-        phone
-        email
-        category
-        logged-in user ID/token
-    */
+    try {
+        await contactRequest("addContact", {
+            name,
+            phone,
+            email,
+            category
+        });
 
-    result.innerHTML =
-        "Add Contact is ready to connect to the API.";
+        contactAddedSuccess();
+        await searchContact();
+    } catch (error) {
+        result.textContent = error.message;
+    }
 }
 
 // --------------------------------------------------
@@ -513,6 +561,7 @@ function openEditContact(contact)
 
 function closeEditContact()
 {
+    document.getElementById("addSection").style.display = "block";
     document.getElementById("editSection").style.display = "none";
     document.getElementById("editResult").innerHTML = "";
 }
@@ -522,7 +571,7 @@ function closeEditContact()
 // UPDATE CONTACT
 // --------------------------------------------------
 
-function updateContact()
+async function updateContact()
 {
     let id =
         document.getElementById("editContactId").value;
@@ -558,19 +607,24 @@ function updateContact()
         return;
     }
 
-    /*
-        API CONNECTION GOES HERE.
+    //API Connection
+    result.textContent = "";
 
-        Send:
-        contact ID
-        name
-        phone
-        email
-        category
-    */
+    try {
+        await contactRequest("updateContact", {
+            id: Number(id),
+            name,
+            phone,
+            email,
+            category
+        });
 
-    result.innerHTML =
-        "Update Contact is ready to connect to the API.";
+        closeEditContact();
+        await searchContact();
+    } catch (error) {
+        result.textContent = error.message;
+    }
+
 }
 
 
@@ -578,7 +632,7 @@ function updateContact()
 // DELETE CONTACT
 // --------------------------------------------------
 
-function deleteContact()
+async function deleteContact()
 {
     let id =
         document.getElementById("editContactId").value;
@@ -591,14 +645,22 @@ function deleteContact()
         return;
     }
 
-    /*
-        API CONNECTION GOES HERE.
+    //API Connect
 
-        Send the contact ID to the delete endpoint.
-    */
+    const result = document.getElementById("editResult");
+    result.textContent = "";
 
-    document.getElementById("editResult").innerHTML =
-        "Delete Contact is ready to connect to the API.";
+    try {
+        await contactRequest("deleteContact", {
+            id: Number(id)
+        });
+
+        closeEditContact();
+        await searchContact();
+    } catch (error) {
+        result.textContent = error.message;
+    }
+
 }
 
 
@@ -634,5 +696,9 @@ window.onload = function()
     if (document.getElementById("userName") !== null)
     {
         loadUser();
+
+        if (sessionStorage.getItem("userId")) {
+            searchContact();
+        }
     }
 };
