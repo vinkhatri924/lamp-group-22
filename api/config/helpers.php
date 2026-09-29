@@ -1,13 +1,7 @@
 <?php
-// ============================================================
-//  api/config/helpers.php — Utility & Helper Functions for API
-// ============================================================
+// api/config/helpers.php - shared helper functions for the API
 
-/**
- * Loads environment variables from a .env file into putenv, $_ENV, and $_SERVER.
- *
- * @param string|null $path Path to the .env file
- */
+// LOAD ENV: reads .env into putenv/$_ENV/$_SERVER so db.php can read the DB credentials
 function loadEnv($path = null) {
     static $loaded = false;
     if ($loaded) {
@@ -41,7 +35,7 @@ function loadEnv($path = null) {
                 $name  = trim($name);
                 $value = trim($value);
 
-                // Strip surrounding quotes
+                // strip surrounding quotes
                 if ((str_starts_with($value, '"') && str_ends_with($value, '"')) ||
                     (str_starts_with($value, "'") && str_ends_with($value, "'"))) {
                     $value = substr($value, 1, -1);
@@ -58,13 +52,9 @@ function loadEnv($path = null) {
     $loaded = true;
 }
 
-// Automatically load environment variables
 loadEnv();
 
-/**
- * Sets standard CORS headers to allow cross-origin API requests.
- * Handles preflight OPTIONS requests by exiting with 200 OK.
- */
+// CORS: allow the frontend to call the API, exit early on a preflight OPTIONS request
 function setCORSHeaders() {
     header("Access-Control-Allow-Origin: *");
     header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
@@ -76,12 +66,7 @@ function setCORSHeaders() {
     }
 }
 
-/**
- * Sends a JSON response with the specified HTTP status code and terminates execution.
- *
- * @param int $statusCode HTTP status code (e.g. 200, 201, 400, 404, 405, 500)
- * @param mixed $data Data array or object to serialize as JSON
- */
+// RESPOND: send a JSON response with the given status code and stop execution
 function respond($statusCode, $data) {
     http_response_code($statusCode);
     header('Content-Type: application/json; charset=utf-8');
@@ -89,11 +74,7 @@ function respond($statusCode, $data) {
     exit;
 }
 
-/**
- * Gets and decodes the JSON request body or falls back to $_POST input.
- *
- * @return array
- */
+// REQUEST BODY: decode the JSON body, fall back to $_POST
 function getRequestBody() {
     $rawInput = file_get_contents('php://input');
     if (!empty($rawInput)) {
@@ -105,12 +86,7 @@ function getRequestBody() {
     return $_POST ?? [];
 }
 
-/**
- * Sanitizes input data by trimming whitespace and stripping HTML tags.
- *
- * @param mixed $data
- * @return mixed
- */
+// CLEAN: trim whitespace and strip HTML tags from user input
 function clean($data) {
     if (is_string($data)) {
         return trim(strip_tags($data));
@@ -118,19 +94,14 @@ function clean($data) {
     return $data;
 }
 
-/**
- * Requires authentication and returns the authenticated User ID.
- * Looks for user identification in headers, cookies, session, query parameters, or request body.
- * If unauthenticated, sends a 401 Unauthorized response and exits.
- *
- * @return int User ID
- */
+// REQUIRE AUTH: pull a user ID out of the request (header, cookie, session, query, or body)
+// 401s if none of those give a valid numeric ID
 function requireAuth() {
     $userId = null;
 
-    // 1. Check Authorization Header (Bearer token, raw ID, or JWT)
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] 
-        ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] 
+    // 1. Authorization header (Bearer token, raw ID, or JWT) - this is what the app actually uses
+    $authHeader = $_SERVER['HTTP_AUTHORIZATION']
+        ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
         ?? (function_exists('apache_request_headers') ? (apache_request_headers()['Authorization'] ?? null) : null);
 
     if ($authHeader) {
@@ -138,7 +109,7 @@ function requireAuth() {
         if (is_numeric($token) && (int)$token > 0) {
             $userId = (int)$token;
         } else {
-            // Check if JWT payload contains userId, user_id, or sub
+            // check if a JWT payload contains userId, user_id, or sub
             $parts = explode('.', $token);
             if (count($parts) === 3) {
                 $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
@@ -149,7 +120,7 @@ function requireAuth() {
         }
     }
 
-    // 2. Check X-User-Id or User-Id custom HTTP header
+    // 2. X-User-Id / User-Id header
     if (!$userId) {
         $xUserId = $_SERVER['HTTP_X_USER_ID'] ?? $_SERVER['HTTP_USER_ID'] ?? null;
         if ($xUserId && is_numeric($xUserId) && (int)$xUserId > 0) {
@@ -157,14 +128,14 @@ function requireAuth() {
         }
     }
 
-    // 3. Check Cookie (userId or user_id)
+    // 3. cookie
     if (!$userId && isset($_COOKIE['userId']) && is_numeric($_COOKIE['userId'])) {
         $userId = (int)$_COOKIE['userId'];
     } elseif (!$userId && isset($_COOKIE['user_id']) && is_numeric($_COOKIE['user_id'])) {
         $userId = (int)$_COOKIE['user_id'];
     }
 
-    // 4. Check Session
+    // 4. session
     if (!$userId) {
         if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             @session_start();
@@ -176,7 +147,7 @@ function requireAuth() {
         }
     }
 
-    // 5. Check Query Parameters (?userId= or ?user_id= or ?uid=)
+    // 5. query params (?userId= / ?user_id= / ?uid=)
     if (!$userId) {
         $qUserId = $_GET['userId'] ?? $_GET['user_id'] ?? $_GET['uid'] ?? null;
         if ($qUserId && is_numeric($qUserId) && (int)$qUserId > 0) {
@@ -184,7 +155,7 @@ function requireAuth() {
         }
     }
 
-    // 6. Check Request Body (userId or user_id)
+    // 6. request body (userId / user_id / uid)
     if (!$userId) {
         $body = getRequestBody();
         $bUserId = $body['userId'] ?? $body['user_id'] ?? $body['uid'] ?? null;
@@ -193,10 +164,25 @@ function requireAuth() {
         }
     }
 
-    // If still no valid numeric user ID, deny access with 401 Unauthorized
     if (!$userId || (int)$userId <= 0) {
         respond(401, ['error' => 'Unauthorized']);
     }
 
     return (int)$userId;
+}
+
+// REQUIRE ADMIN: same as requireAuth() but also checks Role = Admin and not disabled
+// 403s if the caller isn't an active admin
+function requireAdmin($db) {
+    $userId = requireAuth();
+
+    $stmt = $db->prepare('SELECT Role, IsDisabled FROM Users WHERE ID = :id LIMIT 1');
+    $stmt->execute([':id' => $userId]);
+    $user = $stmt->fetch();
+
+    if (!$user || (int) $user['IsDisabled'] === 1 || $user['Role'] !== 'Admin') {
+        respond(403, ['error' => 'Admin access required']);
+    }
+
+    return $userId;
 }
