@@ -6,34 +6,82 @@ let selectedAdminUser = null;
 
 
 // ------------------------------------------------------------
-// LOAD ADMIN PAGE
+// PAGE LOAD / AUTHENTICATION
 // ------------------------------------------------------------
 
 window.onload = function()
 {
     let userId = sessionStorage.getItem("userId");
-    let firstName = sessionStorage.getItem("firstName");
-    let lastName = sessionStorage.getItem("lastName");
+    let firstName = sessionStorage.getItem("firstName") || "";
+    let lastName = sessionStorage.getItem("lastName") || "";
     let role = sessionStorage.getItem("role");
 
     // User must be logged in.
-    if (userId === null)
+    if (!userId)
     {
         window.location.href = "index.html";
         return;
     }
 
-    // Only Admin users should be on this page.
+    // Only Admin users should access this page.
     if (role !== "Admin")
     {
         window.location.href = "color.html";
         return;
     }
 
-    // Show the Admin's name at the top of the page.
     document.getElementById("adminUserName").textContent =
         "Logged in as " + firstName + " " + lastName;
 };
+
+
+// ------------------------------------------------------------
+// CREATE HEADERS FOR ADMIN API REQUESTS
+// ------------------------------------------------------------
+
+function getAdminHeaders(includeJson = false)
+{
+    let headers =
+    {
+        "Authorization":
+            "Bearer " + sessionStorage.getItem("token")
+    };
+
+    if (includeJson)
+    {
+        headers["Content-Type"] = "application/json";
+    }
+
+    return headers;
+}
+
+
+// ------------------------------------------------------------
+// SAFELY READ JSON FROM API
+// ------------------------------------------------------------
+
+async function getJsonResponse(response)
+{
+    let text = await response.text();
+
+    if (text === "")
+    {
+        return {};
+    }
+
+    try
+    {
+        return JSON.parse(text);
+    }
+    catch (error)
+    {
+        console.error("Server returned:", text);
+
+        throw new Error(
+            "Server returned an invalid response."
+        );
+    }
+}
 
 
 // ------------------------------------------------------------
@@ -47,9 +95,9 @@ function adminLogout()
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
 // SEARCH USERS
-// ------------------------------------------------------------
+// ============================================================
 
 async function adminSearchUsers()
 {
@@ -62,30 +110,22 @@ async function adminSearchUsers()
     let results =
         document.getElementById("userSearchResults");
 
-    // Clear old results.
-    message.textContent = "";
+    message.textContent = "Searching...";
     results.innerHTML = "";
-
-    let token = sessionStorage.getItem("token");
 
     try
     {
-        // Blank search is allowed and will return all users.
-        let url =
+        // Blank search returns all users.
+        let response = await fetch(
             "/api/index.php?action=adminUsers&q=" +
-            encodeURIComponent(searchText);
-
-        let response = await fetch(url,
-        {
-            method: "GET",
-
-            headers:
+            encodeURIComponent(searchText),
             {
-                "Authorization": "Bearer " + token
+                method: "GET",
+                headers: getAdminHeaders()
             }
-        });
+        );
 
-        let data = await response.json();
+        let data = await getJsonResponse(response);
 
         if (!response.ok)
         {
@@ -95,17 +135,18 @@ async function adminSearchUsers()
             return;
         }
 
-        if (!data.users || data.users.length === 0)
+        let users = data.users || [];
+
+        if (users.length === 0)
         {
             message.textContent = "No users found.";
             return;
         }
 
         message.textContent =
-            data.users.length + " user(s) found.";
+            users.length + " user(s) found.";
 
-        // Display every returned user.
-        data.users.forEach(function(user)
+        users.forEach(function(user)
         {
             displayAdminUser(user);
         });
@@ -115,13 +156,13 @@ async function adminSearchUsers()
         console.error(error);
 
         message.textContent =
-            "Unable to connect to the server.";
+            error.message || "Unable to connect to the server.";
     }
 }
 
 
 // ------------------------------------------------------------
-// DISPLAY ONE USER SEARCH RESULT
+// DISPLAY USER SEARCH RESULT
 // ------------------------------------------------------------
 
 function displayAdminUser(user)
@@ -129,55 +170,66 @@ function displayAdminUser(user)
     let results =
         document.getElementById("userSearchResults");
 
-    let card = document.createElement("div");
+    let card =
+        document.createElement("div");
+
     card.className = "user-result";
 
-    let name = document.createElement("h3");
+    let name =
+        document.createElement("h3");
+
     name.textContent =
         user.firstName + " " + user.lastName;
 
-    let username = document.createElement("p");
+
+    let username =
+        document.createElement("p");
+
     username.textContent =
         "Username: " + user.username;
 
-    let role = document.createElement("p");
+
+    let role =
+        document.createElement("p");
+
     role.textContent =
         "Role: " + user.role;
 
-    let status = document.createElement("p");
 
-    if (Number(user.isDisabled) === 1)
-    {
-        status.textContent = "Status: Disabled";
-    }
-    else
-    {
-        status.textContent = "Status: Active";
-    }
+    let status =
+        document.createElement("p");
 
-    let selectButton = document.createElement("button");
+    status.textContent =
+        user.isDisabled
+        ? "Status: Disabled"
+        : "Status: Active";
 
-    selectButton.textContent = "Manage User";
-    selectButton.className = "primary-button";
 
-    selectButton.onclick = function()
+    let button =
+        document.createElement("button");
+
+    button.textContent = "Manage User";
+    button.className = "primary-button";
+
+    button.onclick = function()
     {
         selectAdminUser(user);
     };
+
 
     card.appendChild(name);
     card.appendChild(username);
     card.appendChild(role);
     card.appendChild(status);
-    card.appendChild(selectButton);
+    card.appendChild(button);
 
     results.appendChild(card);
 }
 
 
-// ------------------------------------------------------------
-// SELECT A USER TO MANAGE
-// ------------------------------------------------------------
+// ============================================================
+// SELECT USER TO MANAGE
+// ============================================================
 
 function selectAdminUser(user)
 {
@@ -195,90 +247,522 @@ function selectAdminUser(user)
     document.getElementById("selectedUserRole").textContent =
         user.role;
 
-    if (Number(user.isDisabled) === 1)
-    {
-        document.getElementById("selectedUserStatus").textContent =
-            "Disabled";
-    }
-    else
-    {
-        document.getElementById("selectedUserStatus").textContent =
-            "Active";
-    }
+    document.getElementById("selectedUserStatus").textContent =
+        user.isDisabled
+        ? "Disabled"
+        : "Active";
 
-    // Reveal the Selected User section.
-    document.getElementById("selectedUserSection").style.display =
-        "block";
+
+    // Change button depending on account status.
+    let disableButton =
+        document.getElementById("disableUserButton");
+
+    disableButton.textContent =
+        user.isDisabled
+        ? "Enable User"
+        : "Disable User";
+
 
     document.getElementById("selectedUserMessage").textContent =
         "";
+
+    document.getElementById("selectedUserContacts").innerHTML =
+        "";
+
+    // Reveal the management section.
+    document.getElementById("selectedUserSection").style.display =
+        "block";
 }
 
 
-// ------------------------------------------------------------
-// THESE FUNCTIONS WILL BE CONNECTED NEXT
-// ------------------------------------------------------------
+// ============================================================
+// VIEW SELECTED USER'S CONTACTS
+// ============================================================
 
-function adminViewUserContacts()
+async function adminViewUserContacts()
 {
-    document.getElementById("selectedUserMessage").textContent =
-        "View Contacts will be connected next.";
+    if (!selectedAdminUser)
+    {
+        return;
+    }
+
+    let message =
+        document.getElementById("selectedUserMessage");
+
+    let results =
+        document.getElementById("selectedUserContacts");
+
+    message.textContent = "Loading contacts...";
+    results.innerHTML = "";
+
+    try
+    {
+        let response = await fetch(
+            "/api/index.php?action=adminUserContacts&userId=" +
+            encodeURIComponent(selectedAdminUser.id),
+            {
+                method: "GET",
+                headers: getAdminHeaders()
+            }
+        );
+
+        let data = await getJsonResponse(response);
+
+        if (!response.ok)
+        {
+            message.textContent =
+                data.error || "Unable to load contacts.";
+
+            return;
+        }
+
+        let contacts =
+            data.contacts || [];
+
+        if (contacts.length === 0)
+        {
+            message.textContent =
+                "This user has no contacts.";
+
+            return;
+        }
+
+        message.textContent =
+            contacts.length + " contact(s) found.";
+
+        contacts.forEach(function(contact)
+        {
+            let card =
+                document.createElement("div");
+
+            card.className = "contact-result";
+
+
+            let name =
+                document.createElement("h3");
+
+            name.textContent =
+                contact.name;
+
+
+            let phone =
+                document.createElement("p");
+
+            phone.textContent =
+                "Phone: " + (contact.phone || "N/A");
+
+
+            let email =
+                document.createElement("p");
+
+            email.textContent =
+                "Email: " + (contact.email || "N/A");
+
+
+            let category =
+                document.createElement("p");
+
+            category.textContent =
+                "Category: " +
+                (contact.category || "Other");
+
+
+            card.appendChild(name);
+            card.appendChild(phone);
+            card.appendChild(email);
+            card.appendChild(category);
+
+            results.appendChild(card);
+        });
+    }
+    catch (error)
+    {
+        console.error(error);
+
+        message.textContent =
+            error.message || "Unable to connect to the server.";
+    }
 }
 
 
-function adminChangePassword()
+// ============================================================
+// CHANGE USER PASSWORD
+// ============================================================
+
+async function adminChangePassword()
 {
-    document.getElementById("selectedUserMessage").textContent =
-        "Change Password will be connected next.";
+    if (!selectedAdminUser)
+    {
+        return;
+    }
+
+    let newPassword = prompt(
+        "Enter a new password for " +
+        selectedAdminUser.username +
+        ":"
+    );
+
+    // Cancel was pressed.
+    if (newPassword === null)
+    {
+        return;
+    }
+
+    newPassword =
+        newPassword.trim();
+
+    if (newPassword === "")
+    {
+        alert("Password cannot be blank.");
+        return;
+    }
+
+    let message =
+        document.getElementById("selectedUserMessage");
+
+    try
+    {
+        let response = await fetch(
+            "/api/index.php?action=adminChangePassword",
+            {
+                method: "POST",
+
+                headers:
+                    getAdminHeaders(true),
+
+                body: JSON.stringify(
+                {
+                    userId:
+                        selectedAdminUser.id,
+
+                    newPassword:
+                        newPassword
+                })
+            }
+        );
+
+        let data =
+            await getJsonResponse(response);
+
+        if (!response.ok)
+        {
+            message.textContent =
+                data.error ||
+                "Unable to change password.";
+
+            return;
+        }
+
+        message.textContent =
+            "Password changed successfully.";
+    }
+    catch (error)
+    {
+        console.error(error);
+
+        message.textContent =
+            error.message ||
+            "Unable to connect to the server.";
+    }
 }
 
 
-function adminDisableUser()
+// ============================================================
+// DISABLE / ENABLE USER
+// ============================================================
+
+async function adminDisableUser()
 {
-    document.getElementById("selectedUserMessage").textContent =
-        "Disable User will be connected next.";
+    if (!selectedAdminUser)
+    {
+        return;
+    }
+
+    // Toggle the current status.
+    let shouldDisable =
+        !Boolean(selectedAdminUser.isDisabled);
+
+    let actionWord =
+        shouldDisable
+        ? "disable"
+        : "enable";
+
+
+    let confirmed = confirm(
+        "Are you sure you want to " +
+        actionWord +
+        " " +
+        selectedAdminUser.username +
+        "?"
+    );
+
+    if (!confirmed)
+    {
+        return;
+    }
+
+
+    let message =
+        document.getElementById("selectedUserMessage");
+
+    try
+    {
+        let response = await fetch(
+            "/api/index.php?action=adminDisableUser",
+            {
+                method: "POST",
+
+                headers:
+                    getAdminHeaders(true),
+
+                body: JSON.stringify(
+                {
+                    userId:
+                        selectedAdminUser.id,
+
+                    isDisabled:
+                        shouldDisable
+                })
+            }
+        );
+
+        let data =
+            await getJsonResponse(response);
+
+        if (!response.ok)
+        {
+            message.textContent =
+                data.error ||
+                "Unable to update user status.";
+
+            return;
+        }
+
+
+        // Update local copy of user.
+        selectedAdminUser.isDisabled =
+            shouldDisable;
+
+
+        // Update status shown on page.
+        document.getElementById(
+            "selectedUserStatus"
+        ).textContent =
+            shouldDisable
+            ? "Disabled"
+            : "Active";
+
+
+        // Change button to Enable or Disable.
+        let disableButton =
+            document.getElementById(
+                "disableUserButton"
+            );
+
+        disableButton.textContent =
+            shouldDisable
+            ? "Enable User"
+            : "Disable User";
+
+
+        message.textContent =
+            shouldDisable
+            ? "User disabled successfully."
+            : "User enabled successfully.";
+
+
+        // Refresh search results.
+        await adminSearchUsers();
+    }
+    catch (error)
+    {
+        console.error(error);
+
+        message.textContent =
+            error.message ||
+            "Unable to connect to the server.";
+    }
 }
 
 
-function adminSearchContacts()
+// ============================================================
+// SEARCH ALL CONTACTS
+// ============================================================
+
+async function adminSearchContacts()
 {
-    document.getElementById("contactSearchMessage").textContent =
-        "Search All Contacts will be connected next.";
+    let searchText =
+        document.getElementById(
+            "adminContactSearchText"
+        ).value.trim();
+
+    let message =
+        document.getElementById(
+            "contactSearchMessage"
+        );
+
+    let results =
+        document.getElementById(
+            "adminContactResults"
+        );
+
+    message.textContent =
+        "Searching...";
+
+    results.innerHTML = "";
+
+    try
+    {
+        // Blank search returns every contact.
+        let response = await fetch(
+            "/api/index.php?action=adminContacts&q=" +
+            encodeURIComponent(searchText),
+            {
+                method: "GET",
+                headers: getAdminHeaders()
+            }
+        );
+
+        let data =
+            await getJsonResponse(response);
+
+        if (!response.ok)
+        {
+            message.textContent =
+                data.error ||
+                "Unable to search contacts.";
+
+            return;
+        }
+
+        let contacts =
+            data.contacts || [];
+
+        if (contacts.length === 0)
+        {
+            message.textContent =
+                "No contacts found.";
+
+            return;
+        }
+
+        message.textContent =
+            contacts.length +
+            " contact(s) found.";
+
+
+        contacts.forEach(function(contact)
+        {
+            let card =
+                document.createElement("div");
+
+            card.className =
+                "contact-result";
+
+
+            let name =
+                document.createElement("h3");
+
+            name.textContent =
+                contact.name;
+
+
+            let owner =
+                document.createElement("p");
+
+            owner.textContent =
+                "Owner: " + contact.owner;
+
+
+            let phone =
+                document.createElement("p");
+
+            phone.textContent =
+                "Phone: " +
+                (contact.phone || "N/A");
+
+
+            let email =
+                document.createElement("p");
+
+            email.textContent =
+                "Email: " +
+                (contact.email || "N/A");
+
+
+            let category =
+                document.createElement("p");
+
+            category.textContent =
+                "Category: " +
+                (contact.category || "Other");
+
+
+            card.appendChild(name);
+            card.appendChild(owner);
+            card.appendChild(phone);
+            card.appendChild(email);
+            card.appendChild(category);
+
+            results.appendChild(card);
+        });
+    }
+    catch (error)
+    {
+        console.error(error);
+
+        message.textContent =
+            error.message ||
+            "Unable to connect to the server.";
+    }
 }
 
 
-// ------------------------------------------------------------
+// ============================================================
 // CREATE ADMIN ACCOUNT
-// ------------------------------------------------------------
+// ============================================================
+
 async function adminCreateAccount()
 {
     let firstName =
-        document.getElementById("newAdminFirstName").value.trim();
+        document.getElementById(
+            "newAdminFirstName"
+        ).value.trim();
 
     let lastName =
-        document.getElementById("newAdminLastName").value.trim();
+        document.getElementById(
+            "newAdminLastName"
+        ).value.trim();
 
     let username =
-        document.getElementById("newAdminUsername").value.trim();
+        document.getElementById(
+            "newAdminUsername"
+        ).value.trim();
 
     let password =
-        document.getElementById("newAdminPassword").value;
+        document.getElementById(
+            "newAdminPassword"
+        ).value;
 
     let result =
-        document.getElementById("createAdminResult");
+        document.getElementById(
+            "createAdminResult"
+        );
 
     result.textContent = "";
+
 
     if (firstName === "" ||
         lastName === "" ||
         username === "" ||
         password === "")
     {
-        result.textContent = "Please complete all fields.";
+        result.textContent =
+            "Please complete all fields.";
+
         return;
     }
 
-    let token = sessionStorage.getItem("token");
 
     try
     {
@@ -288,10 +772,7 @@ async function adminCreateAccount()
                 method: "POST",
 
                 headers:
-                {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + token
-                },
+                    getAdminHeaders(true),
 
                 body: JSON.stringify(
                 {
@@ -299,33 +780,54 @@ async function adminCreateAccount()
                     lastName: lastName,
                     username: username,
                     password: password,
+
+                    // This is what makes the
+                    // new account an Admin.
                     role: "Admin"
                 })
             }
         );
 
-        let data = await response.json();
+        let data =
+            await getJsonResponse(response);
 
         if (!response.ok)
         {
             result.textContent =
-                data.error || "Unable to create Admin account.";
+                data.error ||
+                "Unable to create Admin account.";
+
             return;
         }
+
 
         result.textContent =
             "Admin account created successfully!";
 
-        document.getElementById("newAdminFirstName").value = "";
-        document.getElementById("newAdminLastName").value = "";
-        document.getElementById("newAdminUsername").value = "";
-        document.getElementById("newAdminPassword").value = "";
+
+        // Clear the form.
+        document.getElementById(
+            "newAdminFirstName"
+        ).value = "";
+
+        document.getElementById(
+            "newAdminLastName"
+        ).value = "";
+
+        document.getElementById(
+            "newAdminUsername"
+        ).value = "";
+
+        document.getElementById(
+            "newAdminPassword"
+        ).value = "";
     }
     catch (error)
     {
         console.error(error);
 
         result.textContent =
+            error.message ||
             "Unable to connect to the server.";
     }
 }

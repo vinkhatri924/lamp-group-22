@@ -245,8 +245,15 @@ if ($method === 'GET' && ($_GET['action'] ?? '') === 'adminUsers') {
     $params = [];
 
     if ($q !== '') {
-        $sql .= ' WHERE Username LIKE :q OR FirstName LIKE :q OR LastName LIKE :q';
-        $params[':q'] = '%' . $q . '%';
+        $sql .= ' WHERE Username LIKE :qUsername
+              OR FirstName LIKE :qFirstName
+              OR LastName LIKE :qLastName';
+
+        $value = '%' . $q . '%';
+
+        $params[':qUsername'] = $value;
+        $params[':qFirstName'] = $value;
+        $params[':qLastName'] = $value;
     }
 
     $sql .= ' ORDER BY Username ASC';
