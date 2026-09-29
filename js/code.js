@@ -36,6 +36,7 @@ function doLogin()
         {
             return {
                 ok: response.ok,
+                status:response.status,
                 data: data
             };
         });
@@ -64,15 +65,27 @@ function doLogin()
         }
         else
         {
-            result.innerHTML =
-                data.error || "Invalid username or password.";
+            console.log(resultData.status)
+            if (resultData.status === 401) // Bad Username/Password
+            {
+                result.innerHTML = "Incorrect Username / Password";
+            }
+            else if (resultData.status === 403) // Account Disabled
+            {
+                result.innerHTML = "Account disabled, please contact administrator.";
+            }
+            else
+            {
+                result.innerHTML = "Unknown Error!";
+            }
+            
         }
     })
 
     .catch(error =>
     {
         console.error(error);
-        result.innerHTML = "Unable to connect to the server.";
+        result.innerHTML = "Unknown Server Error!";
     });
 }
 
@@ -119,6 +132,7 @@ function doRegister()
         {
             return {
                 ok: response.ok,
+                status: response.status,
                 data: data
             };
         });
@@ -190,13 +204,26 @@ function doRegister()
             });
 
         }
+        else if (resultData.status === 401)
+        {
+            result.innerHTML = "Missing Required Fields";
+        }
+        else if (resultData.status === 409)
+        {
+            result.innerHTML = "Username already taken.";
+        }
+        else
+        {
+            result.innerHTML = "Registration Error! Please contact administrator.";
+        }
 
     })
 
     .catch(error =>
     {
         console.error(error);
-        result.innerHTML = "Registration Error!";
+        result.innerHTML = "Registration Error! Please contact administrator.";
+        
     });
 
 }
