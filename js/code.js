@@ -495,11 +495,19 @@ async function addContact()
 
 function contactAddedSuccess()
 {
-    alert("Contact added successfully!");
-
+    // Clear the completed form.
     clearAddContactForm();
-}
 
+    // Show the success message directly on the page.
+    let result =
+        document.getElementById("addResult");
+
+    if (result !== null)
+    {
+        result.textContent =
+            "Contact added successfully!";
+    }
+}
 
 // --------------------------------------------------
 // CLEAR ADD CONTACT FORM

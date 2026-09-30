@@ -113,6 +113,13 @@ async function adminSearchUsers()
     message.textContent = "Searching...";
     results.innerHTML = "";
 
+    // Close any previously selected user when starting a new search.
+    document.getElementById("selectedUserSection").style.display = "none";
+    document.getElementById("selectedUserContacts").innerHTML = "";
+    document.getElementById("selectedUserMessage").textContent = "";
+
+    selectedAdminUser = null;
+
     try
     {
         // Blank search returns all users.
@@ -233,6 +240,26 @@ function displayAdminUser(user)
 
 function selectAdminUser(user)
 {
+    let section =
+        document.getElementById("selectedUserSection");
+
+    // If this same user is already selected and the section
+    // is open, clicking Manage User again will close it.
+    if (selectedAdminUser !== null &&
+        selectedAdminUser.id == user.id &&
+        section.style.display === "block")
+    {
+        section.style.display = "none";
+
+        document.getElementById("selectedUserContacts").innerHTML = "";
+        document.getElementById("selectedUserMessage").textContent = "";
+
+        selectedAdminUser = null;
+
+        return;
+    }
+
+    // Otherwise, select the user and open the section.
     selectedAdminUser = user;
 
     document.getElementById("selectedUserId").value =
@@ -252,30 +279,27 @@ function selectAdminUser(user)
         ? "Disabled"
         : "Active";
 
-
-    // Change button depending on account status.
     let disableButton =
-    document.getElementById("disableUserButton");
+        document.getElementById("disableUserButton");
 
-    if (disableButton){
-    disableButton.textContent =
-        user.isDisabled
-        ? "Enable User"
-        : "Disable User";
+    if (disableButton)
+    {
+        disableButton.textContent =
+            user.isDisabled
+            ? "Enable User"
+            : "Disable User";
     }
 
+    // Clear information from the previously selected user.
+    document.getElementById("selectedUserMessage").textContent = "";
+    document.getElementById("selectedUserContacts").innerHTML = "";
 
-    document.getElementById("selectedUserMessage").textContent =
-        "";
+    document.getElementById("changePasswordSection").style.display = "none";
+    document.getElementById("userStatusConfirmSection").style.display = "none";
 
-    document.getElementById("selectedUserContacts").innerHTML =
-        "";
-
-    // Reveal the management section.
-    document.getElementById("selectedUserSection").style.display =
-        "block";
+    // Show management options.
+    section.style.display = "block";
 }
-
 
 // ============================================================
 // VIEW SELECTED USER'S CONTACTS
@@ -391,6 +415,53 @@ async function adminViewUserContacts()
 // CHANGE USER PASSWORD
 // ============================================================
 
+// ============================================================
+// SHOW CHANGE PASSWORD FORM
+// ============================================================
+
+function showChangePasswordForm()
+{
+    if (!selectedAdminUser)
+    {
+        return;
+    }
+
+    // Hide the enable/disable confirmation if it is open.
+    document.getElementById("userStatusConfirmSection").style.display =
+        "none";
+
+    // Clear old password values and messages.
+    document.getElementById("adminNewPassword").value = "";
+    document.getElementById("adminConfirmPassword").value = "";
+
+    document.getElementById("selectedUserMessage").textContent = "";
+
+    // Show the password form.
+    document.getElementById("changePasswordSection").style.display =
+        "block";
+}
+
+
+// ============================================================
+// CANCEL PASSWORD CHANGE
+// ============================================================
+
+function cancelChangePassword()
+{
+    document.getElementById("changePasswordSection").style.display =
+        "none";
+
+    document.getElementById("adminNewPassword").value = "";
+    document.getElementById("adminConfirmPassword").value = "";
+
+    document.getElementById("selectedUserMessage").textContent = "";
+}
+
+
+// ============================================================
+// CHANGE USER PASSWORD
+// ============================================================
+
 async function adminChangePassword()
 {
     if (!selectedAdminUser)
@@ -398,29 +469,30 @@ async function adminChangePassword()
         return;
     }
 
-    let newPassword = prompt(
-        "Enter a new password for " +
-        selectedAdminUser.username +
-        ":"
-    );
+    let newPassword =
+        document.getElementById("adminNewPassword").value.trim();
 
-    // Cancel was pressed.
-    if (newPassword === null)
-    {
-        return;
-    }
-
-    newPassword =
-        newPassword.trim();
-
-    if (newPassword === "")
-    {
-        alert("Password cannot be blank.");
-        return;
-    }
+    let confirmPassword =
+        document.getElementById("adminConfirmPassword").value.trim();
 
     let message =
         document.getElementById("selectedUserMessage");
+
+    if (newPassword === "")
+    {
+        message.textContent =
+            "Please enter a new password.";
+
+        return;
+    }
+
+    if (newPassword !== confirmPassword)
+    {
+        message.textContent =
+            "Passwords do not match.";
+
+        return;
+    }
 
     try
     {
@@ -429,43 +501,110 @@ async function adminChangePassword()
             {
                 method: "POST",
 
-                headers:
-                    getAdminHeaders(true),
+                headers: getAdminHeaders(true),
 
                 body: JSON.stringify(
                 {
-                    userId:
-                        selectedAdminUser.id,
-
-                    newPassword:
-                        newPassword
+                    userId: selectedAdminUser.id,
+                    newPassword: newPassword
                 })
             }
         );
 
-        let data =
-            await getJsonResponse(response);
+        let data = await getJsonResponse(response);
 
         if (!response.ok)
         {
             message.textContent =
-                data.error ||
-                "Unable to change password.";
+                data.error || "Unable to change password.";
 
             return;
         }
 
         message.textContent =
             "Password changed successfully.";
+
+        document.getElementById("changePasswordSection").style.display =
+            "none";
+
+        document.getElementById("adminNewPassword").value = "";
+        document.getElementById("adminConfirmPassword").value = "";
     }
     catch (error)
     {
         console.error(error);
 
         message.textContent =
-            error.message ||
-            "Unable to connect to the server.";
+            error.message || "Unable to connect to the server.";
     }
+}
+
+
+// ============================================================
+// DISABLE / ENABLE USER
+// ============================================================
+
+// ============================================================
+// SHOW ENABLE / DISABLE CONFIRMATION
+// ============================================================
+
+function showDisableConfirmation()
+{
+    if (!selectedAdminUser)
+    {
+        return;
+    }
+
+    // Hide password form if it is open.
+    document.getElementById("changePasswordSection").style.display =
+        "none";
+
+    let isDisabled =
+        selectedAdminUser.isDisabled === true ||
+        Number(selectedAdminUser.isDisabled) === 1;
+
+    let shouldDisable = !isDisabled;
+
+    let text =
+        document.getElementById("userStatusConfirmText");
+
+    let button =
+        document.getElementById("confirmUserStatusButton");
+
+    if (shouldDisable)
+    {
+        text.textContent =
+            "Disable " + selectedAdminUser.username + "?";
+
+        button.textContent =
+            "Confirm Disable";
+    }
+    else
+    {
+        text.textContent =
+            "Enable " + selectedAdminUser.username + "?";
+
+        button.textContent =
+            "Confirm Enable";
+    }
+
+    document.getElementById("selectedUserMessage").textContent = "";
+
+    document.getElementById("userStatusConfirmSection").style.display =
+        "block";
+}
+
+
+// ============================================================
+// CANCEL ENABLE / DISABLE
+// ============================================================
+
+function cancelUserStatusChange()
+{
+    document.getElementById("userStatusConfirmSection").style.display =
+        "none";
+
+    document.getElementById("selectedUserMessage").textContent = "";
 }
 
 
@@ -480,29 +619,11 @@ async function adminDisableUser()
         return;
     }
 
-    // Toggle the current status.
-    let shouldDisable =
-        !Boolean(selectedAdminUser.isDisabled);
+    let isDisabled =
+        selectedAdminUser.isDisabled === true ||
+        Number(selectedAdminUser.isDisabled) === 1;
 
-    let actionWord =
-        shouldDisable
-        ? "disable"
-        : "enable";
-
-
-    let confirmed = confirm(
-        "Are you sure you want to " +
-        actionWord +
-        " " +
-        selectedAdminUser.username +
-        "?"
-    );
-
-    if (!confirmed)
-    {
-        return;
-    }
-
+    let shouldDisable = !isDisabled;
 
     let message =
         document.getElementById("selectedUserMessage");
@@ -514,66 +635,46 @@ async function adminDisableUser()
             {
                 method: "POST",
 
-                headers:
-                    getAdminHeaders(true),
+                headers: getAdminHeaders(true),
 
                 body: JSON.stringify(
                 {
-                    userId:
-                        selectedAdminUser.id,
-
-                    isDisabled:
-                        shouldDisable
+                    userId: selectedAdminUser.id,
+                    isDisabled: shouldDisable
                 })
             }
         );
 
-        let data =
-            await getJsonResponse(response);
+        let data = await getJsonResponse(response);
 
         if (!response.ok)
         {
             message.textContent =
-                data.error ||
-                "Unable to update user status.";
+                data.error || "Unable to update user status.";
 
             return;
         }
 
-
-        // Update local copy of user.
         selectedAdminUser.isDisabled =
             shouldDisable;
 
+        document.getElementById("selectedUserStatus").textContent =
+            shouldDisable ? "Disabled" : "Active";
 
-        // Update status shown on page.
-        document.getElementById(
-            "selectedUserStatus"
-        ).textContent =
-            shouldDisable
-            ? "Disabled"
-            : "Active";
-
-
-        // Change button to Enable or Disable.
         let disableButton =
-            document.getElementById(
-                "disableUserButton"
-            );
+            document.getElementById("disableUserButton");
 
         disableButton.textContent =
-            shouldDisable
-            ? "Enable User"
-            : "Disable User";
-
+            shouldDisable ? "Enable User" : "Disable User";
 
         message.textContent =
             shouldDisable
             ? "User disabled successfully."
             : "User enabled successfully.";
 
+        document.getElementById("userStatusConfirmSection").style.display =
+            "none";
 
-        // Refresh search results.
         await adminSearchUsers();
     }
     catch (error)
@@ -581,8 +682,7 @@ async function adminDisableUser()
         console.error(error);
 
         message.textContent =
-            error.message ||
-            "Unable to connect to the server.";
+            error.message || "Unable to connect to the server.";
     }
 }
 
