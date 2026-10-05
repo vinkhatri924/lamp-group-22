@@ -235,24 +235,44 @@ if ($method === 'POST' && ($_GET['action'] ?? '') === 'deleteContact') {
     respond(200, ['error' => '']);
 }
 
-// ADMIN: LIST/SEARCH ALL USERS, optional ?q= partial match on name/username
+// ADMIN: LIST/SEARCH ALL USERS
+// Blank search returns all users.
+// A search term checks username, first name, and last name.
 if ($method === 'GET' && ($_GET['action'] ?? '') === 'adminUsers') {
     requireAdmin($db);
 
     $q = clean($_GET['q'] ?? '');
 
-    $sql    = 'SELECT ID, FirstName, LastName, Username, Role, IsDisabled FROM Users';
-    $params = [];
+    if ($q === '') {
+        // No search text: show all users.
+        $stmt = $db->prepare(
+            'SELECT ID, FirstName, LastName, Username, Role, IsDisabled
+             FROM Users
+             ORDER BY Username ASC'
+        );
 
-    if ($q !== '') {
-        $sql .= ' WHERE Username LIKE :q OR FirstName LIKE :q OR LastName LIKE :q';
-        $params[':q'] = '%' . $q . '%';
+        $stmt->execute();
+    } else {
+        // Search username, first name, or last name.
+        // Positional parameters avoid PDO issues with reused named parameters.
+        $search = '%' . $q . '%';
+
+        $stmt = $db->prepare(
+            'SELECT ID, FirstName, LastName, Username, Role, IsDisabled
+             FROM Users
+             WHERE Username LIKE ?
+                OR FirstName LIKE ?
+                OR LastName LIKE ?
+             ORDER BY Username ASC'
+        );
+
+        $stmt->execute([
+            $search,
+            $search,
+            $search
+        ]);
     }
 
-    $sql .= ' ORDER BY Username ASC';
-
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
     $rows = $stmt->fetchAll();
 
     $users = array_map(function ($row) {
@@ -266,7 +286,10 @@ if ($method === 'GET' && ($_GET['action'] ?? '') === 'adminUsers') {
         ];
     }, $rows);
 
-    respond(200, ['users' => $users]);
+    respond(200, [
+        'users' => $users,
+        'error' => ''
+    ]);
 }
 
 // ADMIN: VIEW ONE USER'S CONTACTS, ?userId= required

@@ -147,18 +147,73 @@
 
         <button
             class="warning-button"
-            onclick="adminChangePassword()">
+            onclick="showChangePasswordForm()">
             Change Password
         </button>
 
         <button
+            id="disableUserButton"
             class="danger-button"
-            onclick="adminDisableUser()">
+            onclick="showDisableConfirmation()">
             Disable User
         </button>
 
-        <p id="selectedUserMessage"></p>
+        <!-- INLINE CHANGE PASSWORD FORM -->
 
+<div id="changePasswordSection"
+     style="display: none; margin-top: 15px;">
+
+    <h3>Change Password</h3>
+
+    <input
+        type="password"
+        id="adminNewPassword"
+        placeholder="New Password"
+    >
+
+    <input
+        type="password"
+        id="adminConfirmPassword"
+        placeholder="Confirm Password"
+    >
+
+    <button
+        class="success-button"
+        onclick="adminChangePassword()">
+        Save Password
+    </button>
+
+    <button onclick="cancelChangePassword()">
+        Cancel
+    </button>
+
+</div>
+
+
+<!-- INLINE ENABLE / DISABLE CONFIRMATION -->
+
+<div id="userStatusConfirmSection"
+     style="display: none; margin-top: 15px;">
+
+    <p id="userStatusConfirmText"></p>
+
+    <button
+        id="confirmUserStatusButton"
+        class="danger-button"
+        onclick="adminDisableUser()">
+        Confirm
+    </button>
+
+    <button onclick="cancelUserStatusChange()">
+        Cancel
+    </button>
+
+</div>
+
+<p id="selectedUserMessage"></p>
+
+<div id="selectedUserContacts" class="result-box"></div>
+        
     </div>
 
     <hr>
@@ -232,7 +287,7 @@
 
 </div>
 
-<script src="js/admin.js?v=1"></script>
+<script src="js/admin.js?v=6"></script>
 
 </body>
 </html>
